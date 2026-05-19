@@ -87,18 +87,24 @@
         }
 
         .btn-outline {
+            width: 100%;
+            padding: 16px;
             background-color: white;
             color: #18181b;
             border: 1px solid #e4e4e7;
-            margin-top: 12px;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
         
         .btn-outline:hover {
             background-color: #f4f4f5;
         }
 
-        /* Practice Screen */
-        .practice-screen {
+        /* Screens Shared styling */
+        .practice-screen, .listen-screen {
             display: none;
             flex-direction: column;
             height: 100%;
@@ -305,13 +311,60 @@
             margin-bottom: 30px;
         }
 
+        /* Listen Screen Styling */
+        .listen-content {
+            padding: 40px 24px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 20px;
+        }
+
+        .listen-pinyin-text {
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: #10b981;
+            line-height: 1.6;
+            white-space: pre-line;
+            background: #f0fdf4;
+            padding: 12px 20px;
+            border-radius: 12px;
+            width: 100%;
+            border: 1px dashed #bbf7d0;
+        }
+
+        .listen-hanzi-text {
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: #18181b;
+            line-height: 1.5;
+            white-space: pre-line;
+        }
+
+        .listen-korean-text {
+            font-size: 1.1rem;
+            color: #71717a;
+            line-height: 1.5;
+            white-space: pre-line;
+        }
+
+        .btn-back {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+
     </style>
 </head>
 <body>
 
 <div class="app-container">
     
-    <!-- Start Screen -->
     <div id="start-screen" class="start-screen">
         <div class="start-icon">🇨🇳</div>
         <h1 class="start-title">어순 배열 및 읽기 연습</h1>
@@ -319,10 +372,10 @@
             섞인 단어들을 클릭해 올바른 순서로 맞추고 소리내어 읽어보세요.<br>
             A/B 대화문은 연속으로 나열하시면 됩니다.
         </p>
-        <button class="btn" onclick="startPractice()">시작하기 (제한시간 2분)</button>
+        <button class="btn" onclick="startPractice()" style="margin-bottom: 12px;">퀴즈 시작하기 (제한시간 2분)</button>
+        <button class="btn btn-outline" onclick="startListening()">전체 문장 듣기 및 학습</button>
     </div>
 
-    <!-- Practice Screen -->
     <div id="practice-screen" class="practice-screen">
         <div class="header">
             <div class="progress" id="progress-text">1 / 17</div>
@@ -334,15 +387,12 @@
             
             <div class="arrange-area" id="arrange-area">
                 <div class="selected-box" id="selected-box">
-                    <!-- Selected words will go here -->
-                </div>
+                    </div>
 
                 <div class="word-pool" id="word-pool">
-                    <!-- Scrambled words will go here -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Answer View (Shown when correct or given up) -->
             <div id="answer-view" class="answer-view">
                 <div class="answer-header">
                     <div class="pinyin-text" id="answer-pinyin"></div>
@@ -358,7 +408,26 @@
         </div>
     </div>
 
-    <!-- Results Screen -->
+    <div id="listen-screen" class="listen-screen">
+        <div class="header">
+            <button class="btn-back" onclick="goBackToStart()">⬅️</button>
+            <div class="progress" id="listen-progress-text">1 / 17</div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="listen-content">
+            <div id="listen-pinyin" class="listen-pinyin-text"></div>
+            <div id="listen-hanzi" class="listen-hanzi-text"></div>
+            <div id="listen-korean" class="listen-korean-text"></div>
+        </div>
+
+        <div class="footer">
+            <button class="btn btn-outline" style="flex: 1;" onclick="prevListenEntry()">이전</button>
+            <button class="btn" style="flex: 2;" onclick="replayListenPlay()">🔊 다시 듣기</button>
+            <button class="btn btn-outline" style="flex: 1;" onclick="nextListenEntry()">다음</button>
+        </div>
+    </div>
+
     <div id="results-screen" class="results-screen">
         <div class="start-icon">🎉</div>
         <h2 class="results-title">연습 완료!</h2>
@@ -369,8 +438,8 @@
 </div>
 
 <script>
-    // A/B 대화문은 다시 합치고, 선택지(/)만 분리하여 음성 지원을 위한 한자(Hanzi) 매핑
-    const originalData = [
+// 오타가 완벽하게 수정된 중국어 데이터
+const cleanData = [
         { pinyin: "Nǐ chī fàn le ma?", ko: "밥 먹었니?", hanzi: "你吃饭了吗？" },
         { pinyin: "A: Rènshi nǐ hěn gāoxìng!\nB: Wǒ yě hěn gāoxìng!", ko: "A: 만나서 반가워.\nB: 나도 반가워.", hanzi: "认识你很高兴！我也很高兴！" },
         { pinyin: "Wǒ hěn xǐhuan nǐ.", ko: "널 너무 좋아해.", hanzi: "我很喜欢你。" },
@@ -389,50 +458,103 @@
         { pinyin: "A: Nǐ yǒu mèimei ma?\nB: Méiyǒu, zhǐyǒu yí ge jiějie.", ko: "A: 여동생 있어?\nB: 없어, 누나(언니)만 하나 있어.", hanzi: "你有妹妹吗？没有，只有一个姐姐。" },
         { pinyin: "A: Tā shàng jǐ niánjí?\nB: Gāozhōng sān niánjí.", ko: "A: 그는 몇 학년이야?\nB: 고등학교 3학년이야.", hanzi: "他上几年级？高中三年级。" }
     ];
-
+    
     let practiceData = [];
     let currentIndex = 0;
     let isShowingAnswer = false;
     let timerInterval;
-    let timeLeft = 120; // 2 minutes
+    let timeLeft = 120;
 
-    // State for current question
     let scrambledWords = [];
     let selectedWords = [];
+    
+    let listenIndex = 0;
 
     function extractWords(text) {
-        // A:, B: 표기 및 구두점 제거 후 공백 분리
         let clean = text.replace(/[AB]:/g, '').replace(/[?!,.\/]/g, ' ').trim();
         let words = clean.split(/\s+/).filter(w => w.length > 0);
-        // 소문자로 변환
         return words.map(w => w.toLowerCase());
+    }
+
+    // 전 세계 어디서든 무조건 중국어 정석 발음이 나오도록 Google TTS 스트리밍 적용
+    function playChineseAudio(text) {
+        if (window.currentAudio) {
+            window.currentAudio.pause();
+        }
+        const cleanText = text.replace(/[AB]:/g, '');
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=zh-CN&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+        window.currentAudio = new Audio(url);
+        window.currentAudio.play().catch(e => console.log("Audio play failed:", e));
     }
 
     function playTTS() {
         const data = practiceData[currentIndex];
-        if ('speechSynthesis' in window) {
-            // 발음 중이던 것이 있으면 취소
-            window.speechSynthesis.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(data.hanzi);
-            utterance.lang = 'zh-CN';
-            utterance.rate = 0.85; // 조금 천천히 또박또박 읽도록 설정
-            window.speechSynthesis.speak(utterance);
-        } else {
-            alert("사용 중인 브라우저가 음성 듣기 기능을 지원하지 않습니다.");
-        }
+        playChineseAudio(data.hanzi);
     }
 
     function startPractice() {
-        // 문제 섞기 (원치 않으시면 sort 줄을 지우시면 됩니다)
-        practiceData = [...originalData].sort(() => Math.random() - 0.5);
+        if (window.currentAudio) window.currentAudio.pause();
+        practiceData = [...cleanData].sort(() => Math.random() - 0.5);
         currentIndex = 0;
         
         document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('listen-screen').style.display = 'none';
         document.getElementById('practice-screen').style.display = 'flex';
         
         startTimer();
         loadQuestion();
+    }
+
+    // 전체 문장 듣기 모드 시작
+    function startListening() {
+        if (window.currentAudio) window.currentAudio.pause();
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('practice-screen').style.display = 'none';
+        document.getElementById('listen-screen').style.display = 'flex';
+        listenIndex = 0;
+        loadListenQuestion();
+    }
+
+    function goBackToStart() {
+        if (window.currentAudio) window.currentAudio.pause();
+        clearInterval(timerInterval);
+        document.getElementById('practice-screen').style.display = 'none';
+        document.getElementById('listen-screen').style.display = 'none';
+        document.getElementById('results-screen').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'flex';
+    }
+
+    // 음성이 재생될 때 한어병음 문장과 정보들이 화면에 함께 나타나도록 구성
+    function loadListenQuestion() {
+        const data = cleanData[listenIndex];
+        document.getElementById('listen-progress-text').innerText = `${listenIndex + 1} / ${cleanData.length}`;
+        document.getElementById('listen-pinyin').innerText = data.pinyin;
+        document.getElementById('listen-hanzi').innerText = data.hanzi;
+        document.getElementById('listen-korean').innerText = data.ko;
+        
+        playChineseAudio(data.hanzi);
+    }
+
+    function prevListenEntry() {
+        if (listenIndex > 0) {
+            listenIndex--;
+            loadListenQuestion();
+        }
+    }
+
+    function nextListenEntry() {
+        if (listenIndex < cleanData.length - 1) {
+            listenIndex++;
+            loadListenQuestion();
+        } else {
+            alert("모든 문장을 다 들으셨습니다! 처음 화면으로 돌아갑니다.");
+            goBackToStart();
+        }
+    }
+
+    function replayListenPlay() {
+        const data = cleanData[listenIndex];
+        playChineseAudio(data.hanzi);
     }
 
     function startTimer() {
@@ -474,10 +596,10 @@
         document.getElementById('instruction-text').innerText = "단어를 클릭하여 문장을 완성하세요";
         
         document.getElementById('answer-view').style.display = 'none';
+        document.getElementById('arrange-area').style.display = 'none';
         document.getElementById('arrange-area').style.display = 'flex';
         document.getElementById('selected-box').classList.remove('error');
         
-        // 데이터 준비
         const correctWords = extractWords(data.pinyin);
         scrambledWords = [...correctWords].sort(() => Math.random() - 0.5);
         selectedWords = [];
@@ -485,6 +607,7 @@
         renderWords();
     }
 
+    // 단어 블록을 클릭했을 때 주변 블록 레이아웃이 1픽셀도 흔들리지 않고 자리를 유지하도록 개선
     function renderWords() {
         const pool = document.getElementById('word-pool');
         const box = document.getElementById('selected-box');
@@ -493,11 +616,16 @@
         box.innerHTML = '';
         
         scrambledWords.forEach((wordObj, i) => {
-            if (wordObj === null) return; // selected
             const span = document.createElement('div');
             span.className = 'word-chip';
             span.innerText = wordObj;
-            span.onclick = () => selectWord(i, wordObj);
+            
+            const isSelected = selectedWords.some(item => item.originalIndex === i);
+            if (isSelected) {
+                span.style.visibility = 'hidden';
+            } else {
+                span.onclick = () => selectWord(i, wordObj);
+            }
             pool.appendChild(span);
         });
 
@@ -512,21 +640,15 @@
 
     function selectWord(scrambledIndex, word) {
         selectedWords.push({ originalIndex: scrambledIndex, word: word });
-        scrambledWords[scrambledIndex] = null;
         renderWords();
     }
 
     function deselectWord(selectedIndex) {
-        const item = selectedWords[selectedIndex];
-        scrambledWords[item.originalIndex] = item.word;
         selectedWords.splice(selectedIndex, 1);
         renderWords();
     }
 
     function resetWords() {
-        selectedWords.forEach(item => {
-            scrambledWords[item.originalIndex] = item.word;
-        });
         selectedWords = [];
         document.getElementById('selected-box').classList.remove('error');
         renderWords();
@@ -534,10 +656,8 @@
 
     function handleAction() {
         if (isShowingAnswer) {
-            // 발음 중지
-            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            if (window.currentAudio) window.currentAudio.pause();
             
-            // 다음 문제로
             currentIndex++;
             if (currentIndex >= practiceData.length) {
                 showResults();
@@ -547,21 +667,17 @@
             return;
         }
 
-        // 정답 확인 로직
         const data = practiceData[currentIndex];
         const correctWords = extractWords(data.pinyin);
         const userWords = selectedWords.map(w => w.word);
 
         if (userWords.join('') === correctWords.join('')) {
-            // 정답!
             showAnswerView(true);
-            // 맞췄을 때 자동으로 한번 읽어줌
             playTTS();
         } else {
-            // 오답
             const box = document.getElementById('selected-box');
             box.classList.remove('error');
-            void box.offsetWidth; // trigger reflow
+            void box.offsetWidth; 
             box.classList.add('error');
             
             if(selectedWords.length === 0) {
@@ -589,6 +705,7 @@
     function showResults() {
         clearInterval(timerInterval);
         document.getElementById('practice-screen').style.display = 'none';
+        document.getElementById('listen-screen').style.display = 'none';
         document.getElementById('results-screen').style.display = 'flex';
     }
 </script>
