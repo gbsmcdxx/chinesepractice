@@ -372,14 +372,14 @@
             섞인 단어들을 클릭해 올바른 순서로 맞추고 소리내어 읽어보세요.<br>
             A/B 대화문은 연속으로 나열하시면 됩니다.
         </p>
-        <button class="btn" onclick="startPractice()" style="margin-bottom: 12px;">퀴즈 시작하기 (제한시간 2분)</button>
+        <button class="btn" onclick="startPractice()" style="margin-bottom: 12px;">퀴즈 시작하기 (제한시간 2분 30초)</button>
         <button class="btn btn-outline" onclick="startListening()">전체 문장 듣기 및 학습</button>
     </div>
 
     <div id="practice-screen" class="practice-screen">
         <div class="header">
             <div class="progress" id="progress-text">1 / 17</div>
-            <div class="timer" id="timer-display">02:00</div>
+            <div class="timer" id="timer-display">02:30</div>
         </div>
 
         <div class="content">
@@ -404,6 +404,7 @@
 
         <div class="footer">
             <button id="reset-btn" class="btn btn-outline" style="flex: 1;" onclick="resetWords()">다시 풀기</button>
+            <button id="skip-btn" class="btn btn-outline" style="flex: 1;" onclick="skipQuestion()">모르겠어요</button>
             <button id="action-btn" class="btn" style="flex: 2;" onclick="handleAction()">정답 확인</button>
         </div>
     </div>
@@ -463,7 +464,7 @@ const cleanData = [
     let currentIndex = 0;
     let isShowingAnswer = false;
     let timerInterval;
-    let timeLeft = 120;
+    let timeLeft = 150;
 
     let scrambledWords = [];
     let selectedWords = [];
@@ -558,7 +559,7 @@ const cleanData = [
     }
 
     function startTimer() {
-        timeLeft = 120;
+        timeLeft = 150;
         updateTimerDisplay();
         
         timerInterval = setInterval(() => {
@@ -572,7 +573,7 @@ const cleanData = [
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 document.getElementById('timer-display').innerText = "00:00";
-                alert("시간 종료! 2분이 지났습니다.");
+                alert("시간 종료! 2분 30초가 지났습니다.");
                 showResults();
             }
         }, 1000);
@@ -593,6 +594,7 @@ const cleanData = [
         document.getElementById('action-btn').innerText = "정답 확인";
         document.getElementById('action-btn').className = "btn";
         document.getElementById('reset-btn').style.display = 'block';
+        document.getElementById('skip-btn').style.display = 'block';
         document.getElementById('instruction-text').innerText = "단어를 클릭하여 문장을 완성하세요";
         
         document.getElementById('answer-view').style.display = 'none';
@@ -654,6 +656,10 @@ const cleanData = [
         renderWords();
     }
 
+    function skipQuestion() {
+        showAnswerView(false);
+    }
+
     function handleAction() {
         if (isShowingAnswer) {
             if (window.currentAudio) window.currentAudio.pause();
@@ -693,6 +699,7 @@ const cleanData = [
         document.getElementById('action-btn').innerText = "다음 문장";
         document.getElementById('action-btn').className = "btn btn-outline";
         document.getElementById('reset-btn').style.display = 'none';
+        document.getElementById('skip-btn').style.display = 'none';
         
         document.getElementById('arrange-area').style.display = 'none';
         document.getElementById('answer-view').style.display = 'block';
